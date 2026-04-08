@@ -8,8 +8,8 @@ import html
 import io
 from concurrent.futures import ThreadPoolExecutor # 🚀 新增：並行處理工具
 
-st.set_page_config(page_title="高效評論爬蟲版本⚡", layout="centered")
-st.title("呆瓜婉瑄要的評論爬蟲 📝")
+st.set_page_config(page_title="高效評論爬蟲", layout="centered")
+st.title("高效能評論抓取器 ⚡")
 
 # --- 詳細頁抓取單元 (供並行使用) ---
 def fetch_detail(session, base_url, link, detail_content_class, min_wait, max_wait):
