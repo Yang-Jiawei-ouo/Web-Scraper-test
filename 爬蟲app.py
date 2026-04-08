@@ -16,6 +16,20 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
     full_reviews = []
     progress_bar = st.progress(0)
     
+    # 🏎️ 1. 自動計算延遲速度邏輯
+    if page_num <= 2:
+        # 頁數很少：衝衝衝！ (0.5 ~ 1.5秒)
+        min_wait, max_wait = 0.5, 1.5
+    elif page_num <= 5:
+        # 頁數中等：穩紮穩打 (1.2 ~ 2.5秒)
+        min_wait, max_wait = 0.7, 1.4
+    elif page_num <= 10:
+        # 頁數中等：穩紮穩打 (1.2 ~ 2.5秒)
+        min_wait, max_wait = 1.0, 2.5
+    else:
+        # 頁數很多：禮貌優先，安全第一 (2.0 ~ 4.0秒)
+        min_wait, max_wait = 2.0, 4.0
+
     for page in range(1, page_num + 1):
         url = f"{target_url}?page={page}"
         try:
@@ -50,7 +64,8 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
                         full_reviews.append(final_text)
                 except:
                     continue 
-                time.sleep(random.uniform(1.5, 3.0))
+                # 🕒 2. 使用自動計算出來的延遲區間
+                time.sleep(random.uniform(min_wait, max_wait))
             progress_bar.progress(page / page_num)
         except:
             break
