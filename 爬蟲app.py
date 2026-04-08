@@ -18,16 +18,12 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
     
     # 🏎️ 1. 自動計算延遲速度邏輯
     if page_num <= 2:
-        # 頁數很少：衝衝衝！ (0.5 ~ 1.5秒)
-        min_wait, max_wait = 0.5, 1.5
+        min_wait, max_wait = 0.5, 1.3
     elif page_num <= 5:
-        # 頁數中等：穩紮穩打 (1.2 ~ 2.5秒)
-        min_wait, max_wait = 0.7, 1.4
+        min_wait, max_wait = 0.7, 1.7
     elif page_num <= 10:
-        # 頁數中等：穩紮穩打 (1.2 ~ 2.5秒)
         min_wait, max_wait = 1.0, 2.5
     else:
-        # 頁數很多：禮貌優先，安全第一 (2.0 ~ 4.0秒)
         min_wait, max_wait = 2.0, 4.0
 
     for page in range(1, page_num + 1):
