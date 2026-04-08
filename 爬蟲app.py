@@ -50,7 +50,7 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
                         full_reviews.append(final_text)
                 except:
                     continue 
-                time.sleep(random.uniform(0.5, 1.0))
+                time.sleep(random.uniform(1.5, 3.0))
             progress_bar.progress(page / page_num)
         except:
             break
