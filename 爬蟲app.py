@@ -92,7 +92,7 @@ def to_excel(df):
             workbook = writer.book
             worksheet = writer.sheets['評論內容']
             wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
-            worksheet.set_column('A:A', 100, wrap_format) 
+            worksheet.set_column('A:A', 254, wrap_format) 
         return output.getvalue()
     except:
         return None
