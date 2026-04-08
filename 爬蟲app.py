@@ -24,14 +24,24 @@ def fetch_detail(session, base_url, link, detail_content_class, min_wait, max_wa
         
         content_tag = soup.select_one(detail_content_class)
         if content_tag:
-            # 移除雜訊
+            # 🏠 1. 先抓到評論的主體大房子
+            # 🌟 2. 核心大絕招：根據妳的截圖，直接拆除所有 other-attributes 的盒子
+            # 這樣裡面不管是「・效果：」還是「補充膠原蛋白」都會整組消失！
             for junk in content_tag.select(".other-attributes, .review-attributes, .review-info"):
                 junk.decompose()
             
+            # 📝 3. 抓取文字，使用分隔符號保留段落感
             text = content_tag.get_text(separator="\n", strip=True)
             text = html.unescape(text)
+            
+            # 🧹 4. 清理多餘的空白行或奇怪的符號
             lines = [line.strip() for line in text.split('\n') if line.strip() and line.strip() != "--"]
-            return "\n\n".join(lines)
+            
+            # 用雙換行重新拼起來，排版才會漂亮
+            final_text = "\n\n".join(lines)
+            
+            # 🚀 這裡微調：回傳內容與網址
+            return {"評論內容": final_text, "原始網址": detail_url}
     except:
         return None
     return None
@@ -43,7 +53,7 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    full_reviews = []
+    full_data = [] # 改存字典
     progress_bar = st.progress(0)
     
     # 動態延遲邏輯 (維持原有的聰明設定)
@@ -74,25 +84,28 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
                 for f in futures:
                     result = f.result()
                     if result:
-                        full_reviews.append(result)
+                        full_data.append(result)
             
             progress_bar.progress(page / page_num)
         except Exception as e:
             st.warning(f"第 {page} 頁抓取遇到點狀況，已自動跳過。")
             continue
             
-    return full_reviews
+    return full_data
 
 # --- Excel 轉換函數 ---
 def to_excel(df):
     output = io.BytesIO()
     try:
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='評論內容')
+        # 🚀 下載前，過濾掉網址欄位
+        df_to_save = df[["評論內容"]]
+        
+        with pd.ExcelWriter(output, engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:
+            df_to_save.to_excel(writer, index=False, sheet_name='評論內容')
             workbook = writer.book
             worksheet = writer.sheets['評論內容']
             wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
-            worksheet.set_column('A:A', 254, wrap_format) 
+            worksheet.set_column('A:A', 100, wrap_format) 
         return output.getvalue()
     except:
         return None
@@ -109,7 +122,12 @@ if st.button("開始高效抓取 🚀"):
         if results:
             end_time = time.time()
             st.success(f"搞定！共抓到 {len(results)} 則評論，耗時 {round(end_time - start_time, 1)} 秒。")
-            df = pd.DataFrame(results, columns=["評論內容"])
+            
+            # 轉換成完整的 DataFrame (含網址)
+            df = pd.DataFrame(results)
+            
+            # 在網頁上顯示完整內容
+            st.write("### 🔍 抓取預覽 (含來源網址)")
             st.dataframe(df, use_container_width=True, height=400)
             
             excel_data = to_excel(df)
@@ -120,3 +138,5 @@ if st.button("開始高效抓取 🚀"):
                     file_name="fast_reviews.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+        else:
+            st.error("沒抓到資料，請檢查 Class 標籤！")
