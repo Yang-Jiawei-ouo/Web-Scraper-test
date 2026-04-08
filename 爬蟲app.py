@@ -31,7 +31,9 @@ def fetch_detail(session, base_url, link, detail_content_class, min_wait, max_wa
             text = content_tag.get_text(separator="\n", strip=True)
             text = html.unescape(text)
             lines = [line.strip() for line in text.split('\n') if line.strip() and line.strip() != "--"]
-            return "\n\n".join(lines)
+            
+            # 🚀 這裡微調：為了讓 UI 顯示，我們回傳內容與網址
+            return {"評論內容": "\n\n".join(lines), "原始網址": detail_url}
     except:
         return None
     return None
@@ -43,7 +45,7 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    full_reviews = []
+    full_data = [] # 🚀 改存包含網址的字典
     progress_bar = st.progress(0)
     
     # 動態延遲邏輯 (維持原有的聰明設定)
@@ -74,24 +76,34 @@ def crawl_internal(target_url, page_num, link_class, detail_content_class):
                 for f in futures:
                     result = f.result()
                     if result:
-                        full_reviews.append(result)
+                        full_data.append(result)
             
             progress_bar.progress(page / page_num)
         except Exception as e:
             st.warning(f"第 {page} 頁抓取遇到點狀況，已自動跳過。")
             continue
             
-    return full_reviews
+    return full_data
 
 # --- Excel 轉換函數 ---
 def to_excel(df):
     output = io.BytesIO()
     try:
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='評論內容')
+        # 🚀 關鍵修正 1：只選取「評論內容」，把網址欄位踢掉
+        df_to_save = df[["評論內容"]]
+        
+        # 🚀 關鍵修正 2：加入 options 徹底禁用 Excel 的自動超連結功能
+        with pd.ExcelWriter(output, engine='xlsxwriter', engine_kwargs={'options': {'strings_to_urls': False}}) as writer:
+            df_to_save.to_excel(writer, index=False, sheet_name='評論內容')
             workbook = writer.book
             worksheet = writer.sheets['評論內容']
-            wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
+            
+            # 🚀 關鍵修正 3：強制設定格式為純文字 (@)，防止 Excel 雞婆變色
+            wrap_format = workbook.add_format({
+                'text_wrap': True, 
+                'valign': 'top',
+                'num_format': '@'
+            })
             worksheet.set_column('A:A', 254, wrap_format) 
         return output.getvalue()
     except:
@@ -109,14 +121,21 @@ if st.button("開始高效抓取 🚀"):
         if results:
             end_time = time.time()
             st.success(f"搞定！共抓到 {len(results)} 則評論，耗時 {round(end_time - start_time, 1)} 秒。")
-            df = pd.DataFrame(results, columns=["評論內容"])
+            
+            # 🚀 這裡微調：建立 DataFrame
+            df = pd.DataFrame(results)
+            
+            # 🚀 UI 顯示：這裡會顯示「評論內容」和「原始網址」兩欄
+            st.write("### 🔍 抓取預覽 (含來源網址)")
             st.dataframe(df, use_container_width=True, height=400)
             
             excel_data = to_excel(df)
             if excel_data:
                 st.download_button(
-                    label="📥 下載 Excel 檔案",
+                    label="📥 下載 Excel 檔案 (純文字/無網址/無連結)",
                     data=excel_data,
-                    file_name="fast_reviews.xlsx",
+                    file_name="clean_reviews.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+        else:
+            st.error("沒抓到資料，請檢查 Class 標籤！")
