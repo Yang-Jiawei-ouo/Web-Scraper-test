@@ -65,7 +65,7 @@ def to_excel(df):
             workbook = writer.book
             worksheet = writer.sheets['評論內容']
             wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
-            worksheet.set_column('A:A', 100, wrap_format)
+            worksheet.set_column('A:A', 200, wrap_format) # 寬度調整為 100，並套用換行格式
         return output.getvalue()
     except:
         with pd.ExcelWriter(output) as writer:
@@ -78,13 +78,13 @@ def to_excel(df):
 user_url = st.text_input("🔗 產品評論列表網址：", value="https://www.cosme.net.tw/products/106877/reviews")
 pages = st.number_input("📄 爬取頁數", min_value=1, value=1)
 
-if st.button("開始精準執行 🚀"):
-    with st.spinner('正在精準拆除標籤並整理排版中...'):
+if st.button("開始抓取資料 🚀"):
+    with st.spinner('正在抓取資料..整理排版中...'):
         # 直接鎖定妳截圖中的 class
         results = crawl_internal(user_url, pages, ".review-content-top", ".review-content")
         
         if results:
-            st.success(f"搞定！已成功移除屬性資料，共抓到 {len(results)} 則評論。")
+            st.success(f"搞定！已成功抓取資料，共抓到 {len(results)} 則評論。")
             df = pd.DataFrame(results, columns=["評論內容"])
             st.dataframe(df, use_container_width=True, height=400)
             
