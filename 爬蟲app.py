@@ -7,8 +7,10 @@ import random
 import html
 import io
 
-st.set_page_config(page_title="評論爬蟲", layout="centered")
-st.title("阿呆婉瑄要的評論爬蟲 📝")
+
+st.set_page_config(page_title="高效評論爬蟲版本⚡", layout="centered")
+st.title("呆瓜婉瑄要的評論爬蟲 📝")
+
 
 def crawl_internal(target_url, page_num, link_class, detail_content_class):
     base_url = "https://www.cosme.net.tw"
